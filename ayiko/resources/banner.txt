@@ -1,0 +1,7 @@
+
+  ${bold_red} █████╗ ██╗   ██╗██╗██╗  ██╗ ██████╗
+  ${yellow}██╔══██╗╚██╗ ██╔╝██║██║ ██╔╝██╔═══██╗      ${reset}© 2021 K.M Ahnaf Zamil${bold_white} - GPLv3 license${reset}
+  ${green}███████║ ╚████╔╝ ██║█████╔╝ ██║   ██║      ${reset}Running on${bold_white} Hikari ${hikari_version}${reset}
+  ${blue}██╔══██║  ╚██╔╝  ██║██╔═██╗ ██║   ██║      ${reset}Interpreter: ${thin_white}${python_implementation} ${python_version}${reset}
+  ${cyan}██║  ██║   ██║   ██║██║  ██╗╚██████╔╝
+  ${purple}╚═╝  ╚═╝   ╚═╝   ╚═╝╚═╝  ╚═╝ ╚═════╝

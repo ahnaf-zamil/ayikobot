@@ -1,0 +1,3 @@
+hikari-lightbulb==0.0.59
+hikari==2.0.0.dev98
+
