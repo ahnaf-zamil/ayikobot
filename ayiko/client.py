@@ -21,7 +21,7 @@ class Ayiko(lightbulb.Bot):
         intents: typing.Optional[hikari.Intents] = hikari.Intents.ALL,
         token: typing.Optional[str] = None,
         *,
-        logger: typing.Optional[logging.Logger] = None
+        logger: typing.Optional[logging.Logger] = None,
     ):
         self.config: BotConfig = get_config()
 
@@ -36,14 +36,21 @@ class Ayiko(lightbulb.Bot):
 
         self.owner_ids = self.config.owner_ids
         self.start_time = datetime.utcnow()
+        self.load_all_extensions()
 
     async def get_prefix(self, bot, message: hikari.Message) -> str:
         # Will implement custom prefix, for now it will be static
         return self.config.prefix
 
+    def load_all_extensions(self):
+        for file in os.listdir("ayiko/plugins"):
+            if file.endswith(".py"):
+                self.load_extension(f"ayiko.plugins.{file[:-3]}")
+                self.logger.info(f'Loaded plugin "{file[:-3]}"')
+
     @property
     def logger(self) -> logging.Logger:
-        if self._logger:
+        if not self._logger:
             self._logger = logging.getLogger(self.__class__.__name__)
         return self._logger
 

@@ -1,6 +1,9 @@
 from ayiko.client import Ayiko
+from dotenv import load_dotenv
 
 import logging
+
+load_dotenv()
 
 # setting up logging
 logging.basicConfig(
