@@ -6,7 +6,7 @@ Ayiko is a general-purpose Discord bot written in Python.
 
 ## Status
 This bot is currently under extensive development and considered as work-in-progress. 
-If you are interested in contributing to the project, fell free to make an issue or a pull request.
+If you are interested in contributing to the project, feel free to make an issue or a pull request.
 
 ## Invite
 Right now, you cannot invite the bot to a server as it is not hosted. Mainly because the bot doesn't have any notable features for it to be hosted....yet.
