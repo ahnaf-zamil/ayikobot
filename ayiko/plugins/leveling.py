@@ -41,8 +41,10 @@ class Leveling(lightbulb.Plugin):
     async def on_guild_message(self, event: hikari.GuildMessageCreateEvent):
         """Event listener for all guild messages"""
 
-        # Bot's dont get Xp... sad :c
-        if not event.author.is_bot:
+        prefix = await self.client.get_prefix(self.client, event.message)
+
+        # Bot's dont get XP... sad :c
+        if not event.author.is_bot and event.message.content.startswith(prefix):
             # Checking if the user is in debounce/cooldown or not
             if event.author.id not in self.debounce:
                 # Giving the user XP
@@ -76,6 +78,10 @@ class Leveling(lightbulb.Plugin):
         channel: hikari.GuildTextChannel,
     ):
         """Adds XP to a user"""
+        await asyncio.sleep(
+            1
+        )  # Sleeping for 1 second so that it doesn't glitch out when a user levels up.
+
         user_data = await self.collection.find_one(
             {"guildID": guild_id, "userID": user.id}
         )
@@ -140,15 +146,6 @@ class Leveling(lightbulb.Plugin):
             {"guildID": ctx.guild_id, "userID": user.id}
         )
 
-        if not user_data:
-            await ctx.respond(
-                "This user has not sent a single message in the server!! >:C"
-            )
-            return
-
-        current_xp = user_data["xp"]
-        current_level = await self.calculate_level_from_xp(current_xp)
-
         # Getting the avatar and pasting it
         resp = await self.session.get(str(user.format_avatar(size=128, ext="png")))
         avatar: Image = await self.loop.run_in_executor(
@@ -186,6 +183,19 @@ class Leveling(lightbulb.Plugin):
 
         font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 60)
         draw.text((210, 100), f"#{rank}", (164, 165, 166), font=font)
+
+        if not user_data:
+            await ctx.respond(
+                "This user has not sent a single message in the server!! >:C"
+            )
+            return
+
+        current_xp = (
+            user_data["xp"] + 15
+            if ctx.author.id not in self.debounce
+            else user_data["xp"]
+        )
+        current_level = await self.calculate_level_from_xp(current_xp)
 
         # Drawing the level
         font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 30)
