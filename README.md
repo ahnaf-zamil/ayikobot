@@ -50,6 +50,9 @@ attrs
 typing
 aiohttp
 colorama
+pilutils
+motor
+pillow-simd
 ```
 
 ## License

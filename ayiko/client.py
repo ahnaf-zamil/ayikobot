@@ -2,6 +2,7 @@ from ayiko.utils.config import BotConfig, get_config
 from ayiko.utils.uptime import Uptime
 
 from datetime import datetime
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 
 import os
 import logging
@@ -36,13 +37,33 @@ class Ayiko(lightbulb.Bot):
 
         self.owner_ids = self.config.owner_ids
         self.start_time = datetime.utcnow()
+
+        self.mongo_client: typing.Optional[AsyncIOMotorClient] = None
+        self.db: typing.Optional[AsyncIOMotorDatabase] = None
+
         self.load_all_extensions()
+        self.subscribe(hikari.StartingEvent, self._initialize_mongo)
+
+    async def _initialize_mongo(self, event: hikari.StartingEvent):
+        """Initializes a MongoDB connection"""
+        mongo_user = os.getenv("MONGO_USER")
+        mongo_password = os.getenv("MONGO_PASSWORD")
+        mongo_host = os.getenv("MONGO_HOST")
+        mongo_port = os.getenv("MONGO_PORT")
+        self.mongo_client = AsyncIOMotorClient(
+            f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/ayiko"
+        )
+        self.logger.info(
+            f"Initialized connection to MongoDB on {mongo_host}:{mongo_port} as {mongo_user}"
+        )
+        self.db = self.mongo_client["ayiko"]
 
     async def get_prefix(self, bot, message: hikari.Message) -> str:
         # Will implement custom prefix, for now it will be static
         return self.config.prefix
 
     def load_all_extensions(self):
+        """Loads all lightbulb plugins"""
         for file in os.listdir("ayiko/plugins"):
             if file.endswith(".py"):
                 self.load_extension(f"ayiko.plugins.{file[:-3]}")
@@ -50,6 +71,7 @@ class Ayiko(lightbulb.Bot):
 
     @property
     def logger(self) -> logging.Logger:
+        """The bot's logger"""
         if not self._logger:
             self._logger = logging.getLogger(self.__class__.__name__)
         return self._logger
