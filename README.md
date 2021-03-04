@@ -6,11 +6,11 @@ Ayiko is a general-purpose Discord bot written in Python.
 
 ## Status
 This bot is currently under extensive development and considered as work-in-progress. 
-If you are interested in contributing to the project, feel free to make an issue or a pull request.
+If you are interested in contributing to the project, feel free to make an issue or open up a pull request.
 
 ## Invite
 Right now, you cannot invite the bot to a server as it is not hosted. Mainly because the bot doesn't have any notable features for it to be hosted....yet.
-The developer is working hard to get features out so it will be hosted soon ;)
+The developer is working hard to get features out, so it will be hosted soon ;)
 
 ## Contributing
 If you are considering to contribute, thanks a lot! We welcome all contributors here and you can help out as well.
@@ -26,21 +26,26 @@ it by hosting all the dependencies and services on your pc. But here's how you d
 First of all, rename `.env.example` and `config.example.json` to `.env` and `config.json` respectively.
 Then fill in all the configuration and credentials. Now you can start building the containers
 
-To build the containers, just open your terminal in the folder and run
+To build and run the containers, just open your terminal in the folder and run
 
 ```bash
-docker-compose up -d
+docker-compose up --build -d
 ```
 
-This will build all the containers and run it.
-
-To stop the bot, just run
+To stop the bot and MongoDB, just run
 ```bash
 docker-compose down
 ```
 
-## Libraries
-The open-source libraries and frameworks that we use to make Ayiko awesome are
+## Dependencies
+
+### Software
+```
+Cpython >= 3.8
+MongoDB >= 4.0.0
+```
+
+### Libraries
 
 ```
 hikari
