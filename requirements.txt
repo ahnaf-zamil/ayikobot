@@ -1,6 +1,6 @@
 hikari-lightbulb==0.0.59
 hikari==2.0.0.dev100
 python-dotenv
+motor
 pillow-simd; platform_system == "Linux"
 pillow; platform_system == "Windows"
-git+https://github.com/Supersebi3/pilutils/

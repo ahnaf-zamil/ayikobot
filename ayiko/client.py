@@ -55,7 +55,7 @@ class Ayiko(lightbulb.Bot):
         mongo_host = os.getenv("MONGO_HOST")
         mongo_port = os.getenv("MONGO_PORT")
         self.mongo_client = AsyncIOMotorClient(
-            f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/ayiko"
+            f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
         )
         self.logger.info(
             f"Initialized connection to MongoDB on {mongo_host}:{mongo_port} as {mongo_user}"

@@ -63,9 +63,9 @@ class Leveling(lightbulb.Plugin):
         )  # Since I want the default level to be level 1
 
     async def do_debounce(self, user: hikari.Member):
-        """Basically puts a user on cooldown, waits for 3 seconds, and takes them off from cooldown"""
+        """Basically puts a user on cooldown, waits for 5 seconds, and takes them off from cooldown"""
         self.debounce.append(user.id)
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
         self.debounce.remove(user.id)
 
     async def add_xp(
