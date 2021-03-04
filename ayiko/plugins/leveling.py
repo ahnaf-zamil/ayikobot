@@ -9,15 +9,17 @@ import lightbulb
 import hikari
 import asyncio
 import aiohttp
+import pymongo
 
 
-class Levelling(lightbulb.Plugin):
+class Leveling(lightbulb.Plugin):
     def __init__(self, client: Ayiko):
         super().__init__()
         self.client: Ayiko = client
         self.loop = asyncio.get_event_loop()
         self.session = aiohttp.ClientSession()
         self.collection: typing.Optional[AsyncIOMotorCollection] = None
+        self.guild_collection: typing.Optional[AsyncIOMotorCollection] = None
 
         # Debounce/Cooldown for getting XP after each message,
         # so that users won't get XP for spamming the bot
@@ -27,6 +29,7 @@ class Levelling(lightbulb.Plugin):
     async def on_started(self, event: hikari.StartingEvent):
         # Initializing the collection after the bot has started and the DB connection has been initialized
         self.collection = self.client.db.levels
+        self.guild_collection = self.client.db.guild_config
 
     @lightbulb.listener(hikari.StoppingEvent)
     async def on_stopping(self, event: hikari.StoppingEvent):
@@ -37,10 +40,9 @@ class Levelling(lightbulb.Plugin):
     @lightbulb.listener(hikari.GuildMessageCreateEvent)
     async def on_guild_message(self, event: hikari.GuildMessageCreateEvent):
         """Event listener for all guild messages"""
-        prefix = await self.client.get_prefix(self.client, event.message)
 
-        # Commands don't count as messages and bot's dont get Xp... sad :c
-        if not event.author.is_bot and prefix not in event.message.content:
+        # Bot's dont get Xp... sad :c
+        if not event.author.is_bot:
             # Checking if the user is in debounce/cooldown or not
             if event.author.id not in self.debounce:
                 # Giving the user XP
@@ -109,17 +111,27 @@ class Levelling(lightbulb.Plugin):
         )
 
         level_after = await self.calculate_level_from_xp(result["xp"])
+        guild_config = await self.guild_collection.find_one({"guildID": guild_id})
 
-        if level_after > level_before:
-            await channel.send(
-                f"{user.mention} You have levelled up! Now you are level {level_after}!"
-            )
+        if not guild_config:
+            config = {"guildID": guild_id, "levelMessages": True}
 
-    @lightbulb.command()
-    async def stats(
+            await self.guild_collection.insert_one(config)
+            leveling_enabled = True
+        else:
+            leveling_enabled = guild_config["levelMessages"]
+
+        if leveling_enabled:
+            if level_after > level_before:
+                await channel.send(
+                    f"{user.mention} You have levelled up! Now you are level {level_after}!"
+                )
+
+    @lightbulb.command(aliases=["stats"])
+    async def rank(
         self, ctx: lightbulb.Context, *, user: lightbulb.member_converter = None
     ):
-        """Shows your levelling stats for this server"""
+        """Shows your leveling stats for this server"""
         if not user:
             user = ctx.author
 
@@ -130,7 +142,7 @@ class Levelling(lightbulb.Plugin):
 
         if not user_data:
             await ctx.respond(
-                "This user has not sent a single message in the serer >:C"
+                "This user has not sent a single message in the server!! >:C"
             )
             return
 
@@ -162,8 +174,18 @@ class Levelling(lightbulb.Plugin):
         bg.paste(icon, (630, 35), icon)
 
         # Drawing the server rank
+        members = await (
+            self.collection.find({"guildID": ctx.guild_id}).sort(
+                "xp", pymongo.DESCENDING
+            )
+        ).to_list(length=None)
+        for i, member in enumerate(members, start=1):
+            if member["userID"] == user.id:
+                rank = i
+                break
+
         font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 60)
-        draw.text((210, 100), "#1", (164, 165, 166), font=font)
+        draw.text((210, 100), f"#{rank}", (164, 165, 166), font=font)
 
         # Drawing the level
         font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 30)
@@ -212,4 +234,4 @@ class Levelling(lightbulb.Plugin):
 
 
 def load(client: Ayiko):
-    client.add_plugin(Levelling(client))
+    client.add_plugin(Leveling(client))

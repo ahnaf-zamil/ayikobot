@@ -1,4 +1,5 @@
 {
   "owner_ids": [123456789],
-  "prefix": "ay."
+  "prefix": "ay.",
+  "case_insensitive": true
 }

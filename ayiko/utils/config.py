@@ -14,6 +14,9 @@ class BotConfig:
     """The bot's prefix"""
     prefix: str = attr.ib()
 
+    """Commands are case-insensitive"""
+    case_insensitive: bool = attr.ib()
+
 
 def get_config(file_path: str = "config.json") -> BotConfig:
     with open(file_path) as f:

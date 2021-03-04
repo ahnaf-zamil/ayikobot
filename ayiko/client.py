@@ -33,9 +33,13 @@ class Ayiko(lightbulb.Bot):
             prefix=self.get_prefix,
             intents=intents,
             banner="ayiko.resources",
+            insensitive_commands=self.config.case_insensitive,
         )
 
         self.owner_ids = self.config.owner_ids
+        # A list of the bot's guilds for it's current shard
+        self.my_guilds: typing.Optional[typing.List[hikari.Snowflake]] = None
+
         self.start_time = datetime.utcnow()
 
         self.mongo_client: typing.Optional[AsyncIOMotorClient] = None
