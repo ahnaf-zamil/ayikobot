@@ -1,3 +1,18 @@
+# Copyright (C) 2021 K.M Ahnaf Zamil
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from ayiko.client import Ayiko
 from ayiko.utils.image import ImageUtils
 from ayiko.utils.misc import human_format
@@ -74,12 +89,12 @@ class Leveling(lightbulb.Plugin):
     @staticmethod
     async def format_xp_text(current_xp: int, last_level_xp: int, next_level_xp: int):
         if (denominator := next_level_xp - last_level_xp) > 999:
-            right_side = await human_format(denominator)
+            right_side = human_format(denominator)
         else:
             right_side = denominator
 
         if (numerator := current_xp - last_level_xp) > 999:
-            left_side = await human_format(numerator)
+            left_side = human_format(numerator)
         else:
             left_side = numerator
 
@@ -261,7 +276,7 @@ class Leveling(lightbulb.Plugin):
             )
             current_level = await self.calculate_level_from_xp(entry["xp"])
             display_xp = entry["xp"] - await self.get_xp_for_level(current_level - 1)
-            description += f"{i}. **{str(user)}** - **{await human_format(display_xp)}** xp (Level **{current_level}**)\n"
+            description += f"{i}. **{str(user)}** - **{human_format(display_xp)}** xp (Level **{current_level}**)\n"
 
         embed = hikari.Embed(
             title=f"Leaderboard for {ctx.guild.name}",

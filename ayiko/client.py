@@ -1,7 +1,22 @@
+# Copyright (C) 2021 K.M Ahnaf Zamil
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from ayiko.utils.config import BotConfig, get_config
-from ayiko.utils.uptime import Uptime
 
 from datetime import datetime
+from datetime import timedelta
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 
 import os
@@ -11,7 +26,7 @@ import hikari
 import lightbulb
 
 
-__all__: typing.Final = ["Ayiko"]
+__all__: typing.Final[typing.List[str]] = ["Ayiko"]
 
 
 class Ayiko(lightbulb.Bot):
@@ -31,7 +46,7 @@ class Ayiko(lightbulb.Bot):
         self.start_time = None
 
         super().__init__(
-            token=token if token else os.getenv("BOT_TOKEN"),
+            token=token if token else os.environ["BOT_TOKEN"],
             prefix=self.get_prefix,
             intents=intents,
             banner="ayiko.resources",
@@ -50,10 +65,10 @@ class Ayiko(lightbulb.Bot):
 
     async def _initialize_mongo(self, event: hikari.StartingEvent):
         """Initializes a MongoDB connection"""
-        mongo_user = os.getenv("MONGO_USER")
-        mongo_password = os.getenv("MONGO_PASSWORD")
-        mongo_host = os.getenv("MONGO_HOST")
-        mongo_port = os.getenv("MONGO_PORT")
+        mongo_user = os.environ["MONGO_USER"]
+        mongo_password = os.environ["MONGO_PASSWORD"]
+        mongo_host = os.environ["MONGO_HOST"]
+        mongo_port = os.environ["MONGO_PORT"]
         self.mongo_client = AsyncIOMotorClient(
             f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/"
         )
@@ -85,11 +100,7 @@ class Ayiko(lightbulb.Bot):
         return self._logger
 
     @property
-    def uptime(self) -> Uptime:
+    def uptime(self) -> timedelta:
         """Returns the bot's current uptime"""
         delta_uptime = datetime.utcnow() - self.start_time
-        hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
-        minutes, seconds = divmod(remainder, 60)
-        days, hours = divmod(hours, 24)
-
-        return Uptime(days=days, hours=hours, minutes=minutes, seconds=seconds)
+        return delta_uptime
