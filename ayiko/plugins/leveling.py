@@ -1,5 +1,6 @@
 from ayiko.client import Ayiko
 from ayiko.utils.image import ImageUtils
+from ayiko.utils.misc import human_format
 from motor.motor_asyncio import AsyncIOMotorCollection
 from PIL import Image, ImageFont, ImageDraw
 from io import BytesIO
@@ -10,6 +11,7 @@ import hikari
 import asyncio
 import aiohttp
 import pymongo
+import random
 
 
 class Leveling(lightbulb.Plugin):
@@ -43,12 +45,14 @@ class Leveling(lightbulb.Plugin):
 
         prefix = await self.client.get_prefix(self.client, event.message)
 
-        # Bot's dont get XP... sad :c
-        if not event.author.is_bot and event.message.content.startswith(prefix):
+        # Commands don't count and bots don't get XP... sad :c
+        if not event.author.is_bot and not event.message.content.startswith(prefix):
             # Checking if the user is in debounce/cooldown or not
             if event.author.id not in self.debounce:
                 # Giving the user XP
-                await self.add_xp(event.guild_id, event.author, 15, event.channel)
+                await self.add_xp(
+                    event.guild_id, event.author, random.randint(1, 10), event.channel
+                )
                 # Putting the user on cooldown
                 await asyncio.create_task(self.do_debounce(event.author))
 
@@ -63,6 +67,20 @@ class Leveling(lightbulb.Plugin):
         return (
             int((xp / 100) ** 0.5) + 1
         )  # Since I want the default level to be level 1
+
+    @staticmethod
+    async def format_xp_text(current_xp: int, last_level_xp: int, next_level_xp: int):
+        if (denominator := next_level_xp - last_level_xp) > 999:
+            right_side = await human_format(denominator)
+        else:
+            right_side = denominator
+
+        if (numerator := current_xp - last_level_xp) > 999:
+            left_side = await human_format(numerator)
+        else:
+            left_side = numerator
+
+        return f"{left_side}/{right_side}"
 
     async def do_debounce(self, user: hikari.Member):
         """Basically puts a user on cooldown, waits for 5 seconds, and takes them off from cooldown"""
@@ -151,7 +169,7 @@ class Leveling(lightbulb.Plugin):
         avatar: Image = await self.loop.run_in_executor(
             None, ImageUtils.get_circle_img, await resp.read()
         )
-        bg = Image.open("ayiko/resources/img/stats_bg.png")
+        bg = Image.open("ayiko/resources/img/stats_bg.png").convert("RGBA")
         bg.paste(avatar, (31, 31), avatar)
 
         draw = ImageDraw.Draw(bg)
@@ -229,9 +247,11 @@ class Leveling(lightbulb.Plugin):
         # Drawing the XP ratio on top of XP bar
         draw = ImageDraw.Draw(bg)
         font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 30)
+
+        xp_text = await self.format_xp_text(current_xp, last_level_xp, next_level_xp)
         draw.text(
-            (555, 122),
-            f"{current_xp - last_level_xp}/{next_level_xp - last_level_xp}",
+            (555, 122) if len(xp_text) < 8 else (545, 122),
+            xp_text,
             "black",
             font=font,
             anchor="rs",
