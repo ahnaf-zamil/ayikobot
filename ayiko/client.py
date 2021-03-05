@@ -28,6 +28,8 @@ class Ayiko(lightbulb.Bot):
 
         self._logger = logger
 
+        self.start_time = None
+
         super().__init__(
             token=token if token else os.getenv("BOT_TOKEN"),
             prefix=self.get_prefix,
@@ -39,8 +41,6 @@ class Ayiko(lightbulb.Bot):
         self.owner_ids = self.config.owner_ids
         # A list of the bot's guilds for it's current shard
         self.my_guilds: typing.Optional[typing.List[hikari.Snowflake]] = None
-
-        self.start_time = datetime.utcnow()
 
         self.mongo_client: typing.Optional[AsyncIOMotorClient] = None
         self.db: typing.Optional[AsyncIOMotorDatabase] = None
@@ -72,6 +72,10 @@ class Ayiko(lightbulb.Bot):
             if file.endswith(".py"):
                 self.load_extension(f"ayiko.plugins.{file[:-3]}")
                 self.logger.info(f'Loaded plugin "{file[:-3]}"')
+
+    def run(self, *args, **kwargs):
+        self.start_time = datetime.utcnow()
+        super().run(*args, **kwargs)
 
     @property
     def logger(self) -> logging.Logger:

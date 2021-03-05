@@ -2,7 +2,8 @@ from ayiko.client import Ayiko
 from ayiko.utils.image import ImageUtils
 from ayiko.utils.misc import human_format
 from motor.motor_asyncio import AsyncIOMotorCollection
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image
+from datetime import datetime
 from io import BytesIO
 
 import typing
@@ -12,12 +13,14 @@ import asyncio
 import aiohttp
 import pymongo
 import random
+import logging
 
 
 class Leveling(lightbulb.Plugin):
     def __init__(self, client: Ayiko):
         super().__init__()
         self.client: Ayiko = client
+        self.logger: logging.Logger = self.client.logger
         self.loop = asyncio.get_event_loop()
         self.session = aiohttp.ClientSession()
         self.collection: typing.Optional[AsyncIOMotorCollection] = None
@@ -36,7 +39,7 @@ class Leveling(lightbulb.Plugin):
     @lightbulb.listener(hikari.StoppingEvent)
     async def on_stopping(self, event: hikari.StoppingEvent):
         # Closing the client session when bot is stopping, prevents from Unclosed client session exception
-        self.client.logger.info("Closing client session")
+        self.logger.info("Closing client session")
         await self.session.close()
 
     @lightbulb.listener(hikari.GuildMessageCreateEvent)
@@ -164,60 +167,46 @@ class Leveling(lightbulb.Plugin):
             {"guildID": ctx.guild_id, "userID": user.id}
         )
 
-        # Getting the avatar and pasting it
-        resp = await self.session.get(str(user.format_avatar(size=128, ext="png")))
-        avatar: Image = await self.loop.run_in_executor(
-            None, ImageUtils.get_circle_img, await resp.read()
-        )
-        bg = Image.open("ayiko/resources/img/stats_bg.png").convert("RGBA")
-        bg.paste(avatar, (31, 31), avatar)
-
-        draw = ImageDraw.Draw(bg)
-
-        # Drawing the author's username
-        font = ImageFont.truetype(
-            "ayiko/resources/font/Asap-SemiBold.ttf", int(450 / len(str(ctx.author)))
-        )
-        draw.text((210, 31), str(user), (255, 255, 255), font=font)
-
-        # Drawing the server icon
-        resp = await self.session.get(str(ctx.guild.format_icon(size=128, ext="png")))
-        icon: Image = await self.loop.run_in_executor(
-            None, ImageUtils.get_circle_img, await resp.read()
-        )
-        icon = icon.resize((50, 50), Image.ANTIALIAS)
-        bg.paste(icon, (630, 35), icon)
-
-        # Drawing the server rank
-        members = await (
-            self.collection.find({"guildID": ctx.guild_id}).sort(
-                "xp", pymongo.DESCENDING
-            )
-        ).to_list(length=None)
-        for i, member in enumerate(members, start=1):
-            if member["userID"] == user.id:
-                rank = i
-                break
-
-        font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 60)
-        draw.text((210, 100), f"#{rank}", (164, 165, 166), font=font)
-
         if not user_data:
             await ctx.respond(
                 "This user has not sent a single message in the server!! >:C"
             )
             return
 
+        # Getting the avatar
+        resp = await self.session.get(str(user.format_avatar(size=128, ext="png")))
+        avatar: Image = await self.loop.run_in_executor(
+            None, ImageUtils.get_circle_img, await resp.read()
+        )
+
+        # Getting server icon
+        resp = await self.session.get(str(ctx.guild.format_icon(size=128, ext="png")))
+        icon: Image = await self.loop.run_in_executor(
+            None, ImageUtils.get_circle_img, await resp.read()
+        )
+
+        # Getting the rank of the user
+        members = await (
+            self.collection.find({"guildID": ctx.guild_id}).sort(
+                "xp", pymongo.DESCENDING
+            )
+        ).to_list(length=None)
+
+        rank = None
+
+        for i, member in enumerate(members, start=1):
+            if member["userID"] == user.id:
+                rank = i
+                break
+
+        if not rank:
+            return await ctx.respond("You don't have a rank in this server :c")
+
+        # Calculating math stuff
         current_xp = (
-            user_data["xp"] + 15
-            if ctx.author.id not in self.debounce
-            else user_data["xp"]
+            user_data["xp"] if user.id not in self.debounce else user_data["xp"]
         )
         current_level = await self.calculate_level_from_xp(current_xp)
-
-        # Drawing the level
-        font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 30)
-        draw.text((517, 42), f"Level {current_level}", "white", font=font)
 
         # Creating XP Bar
         last_level_xp = await self.get_xp_for_level(current_level - 1)
@@ -227,7 +216,6 @@ class Leveling(lightbulb.Plugin):
         # since we subtract the number when the user hits a new level
 
         formula = (current_xp - last_level_xp) / (next_level_xp - last_level_xp)
-        color = "white"
         # Dimensions of the XP bar
         width = 373
         height = 30
@@ -235,32 +223,61 @@ class Leveling(lightbulb.Plugin):
         x1, y1 = 292, 125
         x2 = x1 + (width * formula)
         y2 = y1 + height
-
-        rectangle_color = (89, 172, 255)
-
-        rectangle_base = Image.new("RGBA", bg.size, color)
-        d = ImageDraw.Draw(rectangle_base)
-        d.rectangle([(x1, y1), (x2, y2)], rectangle_color)
-        rectangle_base.paste(bg, (0, 0), bg)
-        bg = rectangle_base
-
-        # Drawing the XP ratio on top of XP bar
-        draw = ImageDraw.Draw(bg)
-        font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 30)
+        coords = [(x1, y1), (x2, y2)]
 
         xp_text = await self.format_xp_text(current_xp, last_level_xp, next_level_xp)
-        draw.text(
-            (555, 122) if len(xp_text) < 8 else (545, 122),
+
+        card = await self.loop.run_in_executor(
+            None,
+            ImageUtils.create_rank_card,
+            avatar,
+            user,
+            icon,
+            rank,
+            current_level,
+            coords,
             xp_text,
-            "black",
-            font=font,
-            anchor="rs",
         )
 
         bio = BytesIO()
-        bg.save(bio, format="PNG")
+        card.save(bio, format="PNG")
         bio.seek(0)
         await ctx.respond(bio.read())
+
+    @lightbulb.command(aliases=["lb"])
+    async def leaderboard(self, ctx: lightbulb.Context):
+        """Shows a leaderboard for the total XP of all server members"""
+        users = await (
+            self.collection.find(
+                {"guildID": ctx.guild_id}, limit=10, sort=[("xp", pymongo.DESCENDING)]
+            )
+        ).to_list(length=None)
+
+        description = ""
+
+        for i, entry in enumerate(users, start=1):
+            user: hikari.guilds.Member = self.client.cache.get_member(
+                ctx.guild_id, entry["userID"]
+            )
+            current_level = await self.calculate_level_from_xp(entry["xp"])
+            display_xp = entry["xp"] - await self.get_xp_for_level(current_level - 1)
+            description += f"{i}. **{str(user)}** - **{await human_format(display_xp)}** xp (Level **{current_level}**)\n"
+
+        embed = hikari.Embed(
+            title=f"Leaderboard for {ctx.guild.name}",
+            color="#0394fc",
+            description=description,
+        )
+        embed.set_footer(
+            text=f"Requested by: {ctx.message.author}",
+            icon=ctx.message.author.avatar_url,
+        )
+        embed.timestamp = datetime.now().astimezone()
+        await ctx.respond(embed)
+
+    @lightbulb.command()
+    async def test(self, ctx: lightbulb.Context):
+        await ctx.respond(str(self.client.uptime))
 
 
 def load(client: Ayiko):

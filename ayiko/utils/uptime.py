@@ -7,6 +7,8 @@ __all__: typing.Final = ["Uptime"]
 
 @attr.s
 class Uptime(object):
+    """A class for representing the bot's uptime"""
+
     days: int = attr.ib()
     hours: int = attr.ib()
     minutes: int = attr.ib()
