@@ -55,7 +55,7 @@ class Ayiko(lightbulb.Bot):
 
         self.owner_ids = self.config.owner_ids
         # A list of the bot's guilds for it's current shard
-        self.my_guilds: typing.Optional[typing.List[hikari.Snowflake]] = None
+        self.my_guilds: typing.Optional[typing.List[hikari.Snowflake]] = []
 
         self.mongo_client: typing.Optional[AsyncIOMotorClient] = None
         self.db: typing.Optional[AsyncIOMotorDatabase] = None

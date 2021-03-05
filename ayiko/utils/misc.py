@@ -14,13 +14,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-def human_format(num: int):
+def human_format(num: int) -> str:
     """Converts an integer to a human-readable number format"""
-    num = float("{:.3g}".format(num))
-    magnitude = 0
+    mag = 0
     while abs(num) >= 1000:
-        magnitude += 1
-        num /= 1000.0
-    return "{}{}".format(
-        "{:f}".format(num).rstrip("0").rstrip("."), ["", "K", "M", "B", "T"][magnitude]
-    )
+        num /= 1000
+        mag += 1
+    return f"{num:.1f}".rstrip("0").rstrip(".") + ["", "k", "M", "B", "T"][mag]

@@ -34,7 +34,7 @@ class GuildConfig(lightbulb.Plugin):
 
     @lightbulb.listener(hikari.ShardReadyEvent)
     async def on_shard_ready(self, event: hikari.ShardReadyEvent):
-        self.client.my_guilds = event.unavailable_guilds
+        self.client.my_guilds.extend(event.unavailable_guilds)
 
     @lightbulb.listener(hikari.GuildAvailableEvent)
     async def guild_create(self, event: hikari.GuildAvailableEvent):
