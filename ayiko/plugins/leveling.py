@@ -275,10 +275,6 @@ class Leveling(lightbulb.Plugin):
         embed.timestamp = datetime.now().astimezone()
         await ctx.respond(embed)
 
-    @lightbulb.command()
-    async def test(self, ctx: lightbulb.Context):
-        await ctx.respond(str(self.client.uptime))
-
 
 def load(client: Ayiko):
     client.add_plugin(Leveling(client))
