@@ -290,6 +290,19 @@ class Leveling(lightbulb.Plugin):
         embed.timestamp = datetime.now().astimezone()
         await ctx.respond(embed)
 
+    @lightbulb.checks.has_guild_permissions(hikari.Permissions.MANAGE_GUILD)
+    @lightbulb.command()
+    async def leveling(self, ctx: lightbulb.Context):
+        """Enabled/Disables leveling messages for this server"""
+        guild_config = await self.guild_collection.find_one({"guildID": ctx.guild_id})
+        await self.guild_collection.update_one(
+            {"guildID": ctx.guild_id},
+            {"$set": {"levelMessages": not guild_config["levelMessages"]}},
+        )
+        await ctx.respond(
+            f"Leveling messages have been {'enabled' if not guild_config['levelMessages'] else 'disabled'}."
+        )
+
 
 def load(client: Ayiko):
     client.add_plugin(Leveling(client))

@@ -36,16 +36,7 @@ class ImageUtils:
         avatar = Image.open(data)
         cls.crop_to_circle(avatar)
         avatar = avatar.resize((128, 128), Image.ANTIALIAS).convert("RGBA")
-
-        bg = Image.new("RGBA", (128, 128), (55, 60, 64))
-        cls.crop_to_circle(bg)
-        bg.paste(avatar, (0, 0), avatar)
-
-        border = Image.new("RGBA", (138, 138), (255, 255, 255))
-        cls.crop_to_circle(border)
-
-        border.paste(bg, (5, 5), bg)
-        return border
+        return avatar
 
     @classmethod
     def create_rank_card(
@@ -59,7 +50,7 @@ class ImageUtils:
         xp_text: str,
     ) -> Image:
         bg = Image.open("ayiko/resources/img/stats_bg.png").convert("RGBA")
-        bg.paste(avatar, (31, 31), avatar)
+        bg.paste(avatar, (36, 36), avatar)
 
         draw = ImageDraw.Draw(bg)
 
