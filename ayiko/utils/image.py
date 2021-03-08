@@ -85,7 +85,7 @@ class ImageUtils:
         font = ImageFont.truetype("ayiko/resources/font/Asap-SemiBold.ttf", 30)
 
         draw.text(
-            (555, 122) if len(xp_text) < 8 else (545, 122),
+            (655, 152),
             xp_text,
             "black",
             font=font,
